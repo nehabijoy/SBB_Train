@@ -1,0 +1,11 @@
+# Ignore specific large data files
+Data/2019-03-15istdaten.csv
+Data/2019-03-16istdaten.csv
+Data/2019-03-17istdaten.csv
+Data/2019-03-18istdaten.csv
+
+Data/2026-03-13_IstDaten.csv
+Data/2026-03-14_IstDaten.csv
+Data/2026-03-15_IstDaten.csv
+Data/2026-03-16_IstDaten.csv
+Data/2026-03-17_IstDaten.csv
