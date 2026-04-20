@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transit Reliability Dashboard</title>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!--  Logo/Icons from fontawesome.com   -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --soft-red: #d9534f;        
+            --dark-turquoise: #16a085;  
+            --light-grey: #f4f7f6;      
+            --border-grey: #e2e8f0;     
+            --dark-slate: #2c3e50;      
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--light-grey);
+            color: var(--dark-slate);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--dark-slate), #1a252f);
+            color: var(--white);
+            width: 100%;
+            padding: 40px 0 30px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            margin-bottom: 40px;
+            border-bottom: 5px solid var(--soft-red); 
+        }
+
+        .sbb-logo {
+            height: 45px;
+            margin-bottom: 20px;
+            background-color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .page-header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            color: #bdc3c7;
+            letter-spacing: 0.5px;
+        }
+        
+        .tab-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            background-color: var(--border-grey);
+            color: var(--dark-slate);
+            border: none;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background-color: var(--soft-red);
+            box-shadow: 0 -4px 10px rgba(217, 83, 79, 0.25); 
+            
+            color: var(--white);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background-color: #cbd5e1;
+        }
+
+        /* Dashboard */
+        .tab-content {
+            display: none;
+            width: 100%;
+            max-width: 1000px;
+            animation: fadeIn 0.4s ease;
+        }
+        .tab-content.active { display: block; }
+        
+        .card {
+            background-color: var(--white);
+            border: 1px solid var(--border-grey);
+            border-radius: 12px;
+            padding: 35px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        
+        .card h2 {
+            margin-top: 0;
+            font-size: 22px;
+            color: var(--dark-slate);
+            margin-bottom: 20px;
+        }
+
+        .card img {
+            max-width: 90%;
+            max-height: 400px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* D3 Interactive Visualization */
+        .bar { transition: all 0.2s ease; opacity: 0.85; }
+        
+        /* Bar Hover */
+        .bar:hover { 
+            fill: var(--dark-slate) !important; 
+            opacity: 1 !important;
+            stroke: var(--dark-slate);
+            stroke-width: 2.5px;
+        }
+        
+        .controls { margin-bottom: 25px; text-align: center; }
+        
+        .d3-btn { 
+            padding: 8px 25px; margin: 0 6px; cursor: pointer; font-size: 15px; font-weight: 600;
+            border: 2px solid var(--border-grey); background-color: var(--light-grey); 
+            color: var(--dark-slate); border-radius: 20px; transition: all 0.2s;
+        }
+        .d3-btn:hover { border-color: var(--soft-red); color: var(--soft-red); }
+        .d3-btn.active { background-color: var(--dark-slate); border-color: var(--dark-slate); color: var(--white); }
+        
+        .d3-btn i { margin-right: 6px; }
+    </style>
+</head>
+<body>
+
+    <header class="page-header">
+        <img src="Images/sbb.png" alt="SBB CFF FFS Logo" class="sbb-logo">
+        <h1>Covid's Impact on SBB Network</h1 >
+        <p><i class="fa-solid fa-route"></i> Reliability, Resiliance, and Punctuality/Delay Patterns (2019, 2020, 2026)</p>
+    </header>
+
+
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchTab(event, 'overall-view')"><i class="fa-solid fa-chart-line"></i> Overall Network Status</button>
+        <button class="tab-btn" onclick="switchTab(event, 'international-view')"><i class="fa-solid fa-earth-europe"></i> International Station Insight</button>
+    </div>
+
+    <div id="overall-view" class="tab-content active">
+        <div class="card">
+            <h2><i class="fa-regular fa-clock"></i> Train Punctuality by Year</h2>
+            <img src="Images/punctuality.jpeg" alt="Train Punctuality Graph">
+        </div>
+
+        <div class="card">
+            <h2><i class="fa-solid fa-train"></i> Average Delay by Hour</h2>
+            <img src="Images/avg_delay_hour.png" alt="Average Delay by Hour Graph">
+        </div>
+
+        <div class="card">
+            <h2 id="chart-title"><i class="fa-solid fa-stopwatch"></i> Average Train Delays by Hour (2020)</h2>
+            
+            <div class="controls">
+                <button id="btn-2019" class="d3-btn"><i class="fa-solid fa-calendar-minus"></i> 2019</button>
+                <button id="btn-2020" class="d3-btn"><i class="fa-solid fa-virus-covid"></i> 2020</button>
+                <button id="btn-2026" class="d3-btn"><i class="fa-solid fa-train-tram"></i> 2026</button>
+            </div>
+            
+            <div id="chart" style="display: flex; justify-content: center;"></div> 
+        </div>
+    </div>
+
+    <div id="international-view" class="tab-content">
+        <div class="card">
+            <h2><i class="fa-solid fa-map-location-dot"></i> Top Delayed Swiss vs International Stations</h2>
+            <img src="Images/swiss_vs_intl.png" alt="Swiss vs Intl Graph">
+        </div>
+
+        <div class="card">
+            <h2><i class="fa-solid fa-ranking-star"></i> Top 10 Stations by Average Delay</h2>
+            <img src="Images/top_10_stations.png" alt="Top 10 Stations Graph">
+        </div>
+    </div>
+
+    <script src="d3-script.js"></script>
+    <script>
+        function switchTab(event, tabId) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
